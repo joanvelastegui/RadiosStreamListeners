@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<!-- saved from url=(0055)https://joanvelastegui.github.io/RadiosStreamListeners/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radio Stream Listener Tracker</title>
+<script src="./Radio Stream Listener Tracker_files/chart.umd.js.download"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #eeede9;
+    --text: #1a1a18;
+    --text2: #5a5a56;
+    --text3: #9a9994;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --green: #3B6D11; --green-bg: #EAF3DE;
+    --red: #A32D2D; --red-bg: #FCEBEB;
+    --blue: #185FA5; --blue-bg: #E6F1FB;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #242421; --bg3: #2e2e2b;
+      --text: #f0efe8; --text2: #a8a79f; --text3: #6a6962;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+      --green: #97C459; --green-bg: #173404;
+      --red: #F09595; --red-bg: #501313;
+      --blue: #85B7EB; --blue-bg: #042C53;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
+  .topbar { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 28px; height: 28px; background: var(--blue-bg); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 16px; height: 16px; stroke: var(--blue); fill: none; stroke-width: 2; stroke-linecap: round; }
+  .topbar h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .status-pill { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; background: var(--green-bg); color: var(--green); display: flex; align-items: center; gap: 5px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .countdown-pill { font-size: 11px; color: var(--text3); background: var(--bg2); border: 0.5px solid var(--border); padding: 3px 10px; border-radius: 99px; }
+  .btn { font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: var(--radius-sm); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; }
+  .btn:hover { background: var(--bg3); }
+  .btn.spinning svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn-primary { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+  .btn-primary:hover { opacity: 0.85; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+  .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .metric-value { font-size: 24px; font-weight: 600; color: var(--text); }
+  .metric-value.sm { font-size: 14px; font-weight: 400; color: var(--text2); }
+
+  .panel { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 1.25rem; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 0.5px solid var(--border); }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .panel-body { padding: 16px 18px; }
+
+  .controls-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .window-btns { display: flex; gap: 4px; }
+  .wbtn { font-size: 12px; padding: 5px 11px; border-radius: var(--radius-sm); border: 0.5px solid var(--border2); background: var(--bg2); color: var(--text2); cursor: pointer; font-weight: 500; }
+  .wbtn.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+  .sep { width: 0.5px; height: 20px; background: var(--border2); }
+
+  .station-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  .station-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--bg2); cursor: pointer; transition: border-color 0.15s, background 0.15s; user-select: none; }
+  .station-toggle.active { background: var(--bg); border-color: var(--border2); }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .station-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .station-cur { font-size: 11px; color: var(--text3); margin-left: auto; }
+  .status-ind { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .chart-wrap { position: relative; width: 100%; height: 320px; }
+  .empty-chart { display: flex; align-items: center; justify-content: center; height: 320px; color: var(--text3); font-size: 13px; }
+
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .scard { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .scard-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .scard-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
+  .badge-online { background: var(--green-bg); color: var(--green); }
+  .badge-offline { background: var(--red-bg); color: var(--red); }
+  .scard-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sm-metric { background: var(--bg2); border-radius: var(--radius-sm); padding: 8px 10px; }
+  .sm-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+  .sm-val { font-size: 18px; font-weight: 600; color: var(--text); }
+  .sm-val.loading { font-size: 12px; color: var(--text3); animation: pulse 1.2s ease-in-out infinite; }
+  .sm-val.na { font-size: 12px; color: var(--text3); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  .scard-url { font-size: 10px; color: var(--text3); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .log-table th { text-align: left; color: var(--text3); font-weight: 500; font-size: 11px; padding: 0 10px 8px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--border); }
+  .log-table td { padding: 7px 10px; border-bottom: 0.5px solid var(--border); color: var(--text2); vertical-align: middle; }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table td:first-child { color: var(--text); font-weight: 500; }
+  .log-wrap { max-height: 260px; overflow-y: auto; }
+
+  footer { text-align: center; font-size: 11px; color: var(--text3); padding: 2rem 0 1rem; }
+</style>
+<script src="chrome-extension://daiklcgdelcbcmjepemiklfglodmofbm/static/js/workers.min.js"></script></head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M6.3 6.3a8 8 0 0 0 0 11.4"></path><path d="M17.7 6.3a8 8 0 0 1 0 11.4"></path><path d="M3.5 3.5a16 16 0 0 0 0 17"></path><path d="M20.5 3.5a16 16 0 0 1 0 17"></path></svg>
+    </div>
+    <h1>Radio Stream Tracker</h1>
+  </div>
+  <div class="topbar-right">
+    <span class="status-pill" id="status-pill"><span class="status-dot"></span><span id="status-text">Live</span></span>
+    <span class="countdown-pill" id="countdown-pill">Next fetch: 6:10</span>
+    <button class="btn" id="refresh-btn" onclick="fetchAll()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
+      Refresh
+    </button>
+    <button class="btn btn-primary" onclick="exportCSV()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export CSV
+    </button>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="summary-row">
+    <div class="metric"><div class="metric-label">Total listeners now</div><div class="metric-value" id="sum-current">542</div></div>
+    <div class="metric"><div class="metric-label">Stations online</div><div class="metric-value" id="sum-online">6 / 8</div></div>
+    <div class="metric"><div class="metric-label">Data points logged</div><div class="metric-value" id="sum-points">8</div></div>
+    <div class="metric"><div class="metric-label">Tracking since</div><div class="metric-value sm" id="sum-since">Jun 10, 06:59 AM</div></div>
+    <div class="metric"><div class="metric-label">Last updated</div><div class="metric-value sm" id="sum-updated">07:00 AM</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Listener history chart</span>
+      <div class="controls-row">
+        <div class="window-btns">
+          <button class="wbtn active" data-h="1" onclick="setWindow(1,this)">1h</button>
+          <button class="wbtn" data-h="3" onclick="setWindow(3,this)">3h</button>
+          <button class="wbtn" data-h="6" onclick="setWindow(6,this)">6h</button>
+          <button class="wbtn" data-h="12" onclick="setWindow(12,this)">12h</button>
+          <button class="wbtn" data-h="0" onclick="setWindow(0,this)">All</button>
+        </div>
+        <div class="sep"></div>
+        <span style="font-size:11px;color:var(--text3)">Toggle stations:</span>
+      </div>
+    </div>
+    <div class="panel-body" style="padding-bottom:10px;">
+      <div class="station-grid" id="toggle-grid" style="margin-bottom:14px;">
+    <div class="station-toggle active" id="tog-Rumba" onclick="toggleStation(&#39;Rumba&#39;)">
+      <span class="swatch" style="background:#378ADD"></span>
+      <span class="status-ind" id="ind-Rumba" style="background: var(--red);"></span>
+      <span class="station-name">Rumba</span>
+      <span class="station-cur" id="togcur-Rumba">—</span>
+    </div>
+  
+    <div class="station-toggle active" id="tog-88-5" onclick="toggleStation(&#39;88-5&#39;)">
+      <span class="swatch" style="background:#1D9E75"></span>
+      <span class="status-ind" id="ind-88-5" style="background: var(--red);"></span>
+      <span class="station-name">88-5</span>
+      <span class="station-cur" id="togcur-88-5">—</span>
+    </div>
+  
+    <div class="station-toggle active" id="tog-Continental" onclick="toggleStation(&#39;Continental&#39;)">
+      <span class="swatch" style="background:#D85A30"></span>
+      <span class="status-ind" id="ind-Continental" style="background: var(--green);"></span>
+      <span class="station-name">Continental</span>
+      <span class="station-cur" id="togcur-Continental">11</span>
+    </div>
+  
+    <div class="station-toggle active" id="tog-Amor" onclick="toggleStation(&#39;Amor&#39;)">
+      <span class="swatch" style="background:#7F77DD"></span>
+      <span class="status-ind" id="ind-Amor" style="background: var(--green);"></span>
+      <span class="station-name">Amor</span>
+      <span class="station-cur" id="togcur-Amor">23</span>
+    </div>
+  
+    <div class="station-toggle active" id="tog-Alegria" onclick="toggleStation(&#39;Alegria&#39;)">
+      <span class="swatch" style="background:#BA7517"></span>
+      <span class="status-ind" id="ind-Alegria" style="background: var(--green);"></span>
+      <span class="station-name">Alegria</span>
+      <span class="station-cur" id="togcur-Alegria">79</span>
+    </div>
+  
+    <div class="station-toggle active" id="tog-Caracol" onclick="toggleStation(&#39;Caracol&#39;)">
+      <span class="swatch" style="background:#D4537E"></span>
+      <span class="status-ind" id="ind-Caracol" style="background: var(--green);"></span>
+      <span class="station-name">Caracol</span>
+      <span class="station-cur" id="togcur-Caracol">92</span>
+    </div>
+  
+    <div class="station-toggle active" id="tog-Xtrema" onclick="toggleStation(&#39;Xtrema&#39;)">
+      <span class="swatch" style="background:#639922"></span>
+      <span class="status-ind" id="ind-Xtrema" style="background: var(--green);"></span>
+      <span class="station-name">Xtrema</span>
+      <span class="station-cur" id="togcur-Xtrema">9</span>
+    </div>
+  
+    <div class="station-toggle active" id="tog-Centro" onclick="toggleStation(&#39;Centro&#39;)">
+      <span class="swatch" style="background:#888780"></span>
+      <span class="status-ind" id="ind-Centro" style="background: var(--green);"></span>
+      <span class="station-name">Centro</span>
+      <span class="station-cur" id="togcur-Centro">328</span>
+    </div>
+  </div>
+      <div class="chart-wrap">
+        <canvas id="mainChart" role="img" aria-label="Line chart showing listener count over time for selected radio stations" width="1014" height="320" style="display: block; box-sizing: border-box; height: 320px; width: 1014px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">Live station cards</span></div>
+    <div class="panel-body">
+      <div class="cards-grid" id="cards-grid">
+    <div class="scard" id="scard-Rumba">
+      <div class="scard-top">
+        <span class="scard-name">Rumba</span>
+        <span class="badge badge-offline" id="sbadge-Rumba">Offline</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val na" id="scur-Rumba">—</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val na" id="spk-Rumba">—</div></div>
+      </div>
+      <div class="scard-url" title="https://radio.kapchosting.com:7052">https://radio.kapchosting.com:7052</div>
+    </div>
+  
+    <div class="scard" id="scard-88-5">
+      <div class="scard-top">
+        <span class="scard-name">88-5</span>
+        <span class="badge badge-offline" id="sbadge-88-5">Offline</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val na" id="scur-88-5">—</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val na" id="spk-88-5">—</div></div>
+      </div>
+      <div class="scard-url" title="https://radio.kapchosting.com:7055">https://radio.kapchosting.com:7055</div>
+    </div>
+  
+    <div class="scard" id="scard-Continental">
+      <div class="scard-top">
+        <span class="scard-name">Continental</span>
+        <span class="badge badge-online" id="sbadge-Continental">Online</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val" id="scur-Continental">11</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val" id="spk-Continental">12</div></div>
+      </div>
+      <div class="scard-url" title="https://radio.kapchosting.com:7056">https://radio.kapchosting.com:7056</div>
+    </div>
+  
+    <div class="scard" id="scard-Amor">
+      <div class="scard-top">
+        <span class="scard-name">Amor</span>
+        <span class="badge badge-online" id="sbadge-Amor">Online</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val" id="scur-Amor">23</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val" id="spk-Amor">144</div></div>
+      </div>
+      <div class="scard-url" title="https://rr5100.globalhost1.com:8168/statistics">https://rr5100.globalhost1.com:8168/statistics</div>
+    </div>
+  
+    <div class="scard" id="scard-Alegria">
+      <div class="scard-top">
+        <span class="scard-name">Alegria</span>
+        <span class="badge badge-online" id="sbadge-Alegria">Online</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val" id="scur-Alegria">79</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val" id="spk-Alegria">973</div></div>
+      </div>
+      <div class="scard-url" title="https://cloudstream2032.conectarhosting.com:7092/statistics">https://cloudstream2032.conectarhosting.com:7092/statistics</div>
+    </div>
+  
+    <div class="scard" id="scard-Caracol">
+      <div class="scard-top">
+        <span class="scard-name">Caracol</span>
+        <span class="badge badge-online" id="sbadge-Caracol">Online</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val" id="scur-Caracol">92</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val" id="spk-Caracol">2,137</div></div>
+      </div>
+      <div class="scard-url" title="https://cloudstream2032.conectarhosting.com:7291/statistics">https://cloudstream2032.conectarhosting.com:7291/statistics</div>
+    </div>
+  
+    <div class="scard" id="scard-Xtrema">
+      <div class="scard-top">
+        <span class="scard-name">Xtrema</span>
+        <span class="badge badge-online" id="sbadge-Xtrema">Online</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val" id="scur-Xtrema">9</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val" id="spk-Xtrema">77</div></div>
+      </div>
+      <div class="scard-url" title="https://s1.raudiostream.com:8004/statistics">https://s1.raudiostream.com:8004/statistics</div>
+    </div>
+  
+    <div class="scard" id="scard-Centro">
+      <div class="scard-top">
+        <span class="scard-name">Centro</span>
+        <span class="badge badge-online" id="sbadge-Centro">Online</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val" id="scur-Centro">328</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val" id="spk-Centro">1,005</div></div>
+      </div>
+      <div class="scard-url" title="https://cloudstream2032.conectarhosting.com:8820/statistics">https://cloudstream2032.conectarhosting.com:8820/statistics</div>
+    </div>
+  </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Recent data log</span>
+      <button class="btn" style="font-size:11px;padding:4px 10px;" onclick="clearHistory()">Clear history</button>
+    </div>
+    <div class="panel-body" style="padding:0;">
+      <div class="log-wrap">
+        <table class="log-table">
+          <thead><tr><th>Time</th><th>Station</th><th>Current</th><th>Peak</th><th>Status</th></tr></thead>
+          <tbody id="log-body">
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>Centro</td>
+      <td>328</td>
+      <td>1,005</td>
+      <td><span class="badge badge-online">Online</span></td>
+    </tr>
+  
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>Xtrema</td>
+      <td>9</td>
+      <td>77</td>
+      <td><span class="badge badge-online">Online</span></td>
+    </tr>
+  
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>Caracol</td>
+      <td>92</td>
+      <td>2,137</td>
+      <td><span class="badge badge-online">Online</span></td>
+    </tr>
+  
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>Alegria</td>
+      <td>79</td>
+      <td>973</td>
+      <td><span class="badge badge-online">Online</span></td>
+    </tr>
+  
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>Amor</td>
+      <td>23</td>
+      <td>144</td>
+      <td><span class="badge badge-online">Online</span></td>
+    </tr>
+  
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>Continental</td>
+      <td>11</td>
+      <td>12</td>
+      <td><span class="badge badge-online">Online</span></td>
+    </tr>
+  
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>88-5</td>
+      <td>—</td>
+      <td>—</td>
+      <td><span class="badge badge-offline">Offline</span></td>
+    </tr>
+  
+    <tr>
+      <td>Jun 10, 06:59 AM</td>
+      <td>Rumba</td>
+      <td>—</td>
+      <td>—</td>
+      <td><span class="badge badge-offline">Offline</span></td>
+    </tr>
+  </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Auto-collects every 30 minutes • Data stored in localStorage • Refresh persists history</footer>
+
+<script>
+const STATIONS = [
+  { name:"Rumba",       url:"https://radio.kapchosting.com:7052" },
+  { name:"88-5",        url:"https://radio.kapchosting.com:7055" },
+  { name:"Continental", url:"https://radio.kapchosting.com:7056" },
+  { name:"Amor",        url:"https://rr5100.globalhost1.com:8168/statistics" },
+  { name:"Alegria",     url:"https://cloudstream2032.conectarhosting.com:7092/statistics" },
+  { name:"Caracol",     url:"https://cloudstream2032.conectarhosting.com:7291/statistics" },
+  { name:"Xtrema",      url:"https://s1.raudiostream.com:8004/statistics" },
+  { name:"Centro",      url:"https://cloudstream2032.conectarhosting.com:8820/statistics" },
+  { name:"Ambato",      url:"https://rr5100.globalhost1.com:8140/" },
+  { name:"Retumba",     url:"https://panel.innovatestream.pe:10839/stream" },
+  { name:"Turbo",       url:"https://streamingecuador.com/stream/radioturboambato" },
+  { name:"Bandida",     url:"https://sonicpanel.zonaradio.net:8294/stream" },
+  { name:"Paz y Bien",  url:"https://s7.myradiostream.com:59906/" },
+  { name:"Celeste",     url:"https://streamingecuador.com:9024/" },
+];
+
+const COLORS = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#BA7517","#D4537E","#639922","#888780","#C0724A","#5BB8C9","#A04FB5","#E8A020","#4CAF82","#E05C5C"];
+const PROXY = "https://api.allorigins.win/raw?url=";
+const INTERVAL_MS = 30 * 60 * 1000;
+const STORAGE_KEY = "radio_tracker_v2";
+
+let history = [];
+let activeStations = new Set(STATIONS.map(s => s.name));
+let windowHours = 1;
+let chart = null;
+let countdownTimer = null;
+let nextFetch = null;
+let liveState = {};
+
+STATIONS.forEach(s => { liveState[s.name] = { current: null, peak: null, online: null }; });
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) history = JSON.parse(raw);
+  } catch { history = []; }
+}
+
+function saveHistory() {
+  try {
+    const cutoff = Date.now() - 24 * 3600 * 1000;
+    history = history.filter(r => r.ts >= cutoff);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  } catch {}
+}
+
+function tryParseText(text) {
+  if (!text || !text.trim()) return null;
+  const patterns = [
+    [/<listeners>(\d+)<\/listeners>/i, /<listener_peak>(\d+)<\/listener_peak>/i],
+    [/<Listeners>(\d+)<\/Listeners>/i, /<ListenerPeak>(\d+)<\/ListenerPeak>/i],
+    [/"listeners"\s*:\s*(\d+)/i, /"listener_peak"\s*:\s*(\d+)/i],
+    [/<CURRENTLISTENERS>(\d+)<\/CURRENTLISTENERS>/i, /<PEAKLISTENERS>(\d+)<\/PEAKLISTENERS>/i],
+    [/<currentlisteners>(\d+)<\/currentlisteners>/i, /<peaklisteners>(\d+)<\/peaklisteners>/i],
+    [/"currentlisteners"\s*:\s*(\d+)/i, /"peaklisteners"\s*:\s*(\d+)/i],
+  ];
+  let cur = null, pk = null;
+  for (const [cp, pp] of patterns) {
+    if (cur === null) { const m = text.match(cp); if (m) cur = parseInt(m[1], 10); }
+    if (pk === null)  { const m = text.match(pp); if (m) pk  = parseInt(m[1], 10); }
+  }
+  if (cur !== null || pk !== null) return { current: cur, peak: pk };
+  try {
+    const j = JSON.parse(text.trim());
+    const c = j.listeners ?? j.currentlisteners ?? j.CURRENTLISTENERS ?? j.current_listeners ?? null;
+    const p = j.listener_peak ?? j.peaklisteners ?? j.PEAKLISTENERS ?? j.peak_listeners ?? null;
+    if (c !== null || p !== null) return { current: c !== null ? +c : null, peak: p !== null ? +p : null };
+  } catch {}
+  return null;
+}
+
+async function fetchStation(station) {
+  const base = station.url.replace(/\/$/, "").replace(/\/statistics$/, "");
+  const endpoints = station.url.endsWith("/statistics")
+    ? [station.url, base + "/7.html"]
+    : [base + "/status-json.xsl", base + "/statistics", base + "/7.html", base + "/stats"];
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(PROXY + encodeURIComponent(ep), { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const text = await res.text();
+      const parsed = tryParseText(text);
+      if (parsed && (parsed.current !== null || parsed.peak !== null)) return { ...parsed, online: true };
+    } catch {}
+  }
+  return { current: null, peak: null, online: false };
+}
+
+async function fetchAll() {
+  const btn = document.getElementById("refresh-btn");
+  btn.classList.add("spinning");
+  document.getElementById("status-text").textContent = "Fetching…";
+
+  const ts = Date.now();
+  const results = await Promise.all(STATIONS.map(async s => {
+    const data = await fetchStation(s);
+    liveState[s.name] = data;
+    return { ts, station: s.name, current: data.current, peak: data.peak, online: data.online };
+  }));
+
+  results.forEach(r => history.push(r));
+  saveHistory();
+
+  updateCards();
+  updateToggles();
+  renderChart();
+  updateSummary();
+  updateLog();
+
+  const now = new Date();
+  document.getElementById("sum-updated").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  document.getElementById("status-text").textContent = "Live";
+  btn.classList.remove("spinning");
+
+  nextFetch = Date.now() + INTERVAL_MS;
+  clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    const rem = Math.max(0, nextFetch - Date.now());
+    const m = Math.floor(rem / 60000);
+    const s = Math.floor((rem % 60000) / 1000);
+    document.getElementById("countdown-pill").textContent = `Next fetch: ${m}:${String(s).padStart(2,"0")}`;
+    if (rem === 0) fetchAll();
+  }, 1000);
+}
+
+function updateSummary() {
+  let totalCur = 0, online = 0;
+  STATIONS.forEach(s => {
+    const d = liveState[s.name];
+    if (d.online) { online++; if (d.current != null) totalCur += d.current; }
+  });
+  document.getElementById("sum-current").textContent = totalCur.toLocaleString();
+  document.getElementById("sum-online").textContent = `${online} / ${STATIONS.length}`;
+  document.getElementById("sum-points").textContent = history.length.toLocaleString();
+  if (history.length > 0) {
+    const first = new Date(history[0].ts);
+    document.getElementById("sum-since").textContent = first.toLocaleString([], { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" });
+  }
+}
+
+function buildCards() {
+  const grid = document.getElementById("cards-grid");
+  grid.innerHTML = STATIONS.map((s, i) => `
+    <div class="scard" id="scard-${s.name}">
+      <div class="scard-top">
+        <span class="scard-name">${s.name}</span>
+        <span class="badge badge-offline" id="sbadge-${s.name}">Loading</span>
+      </div>
+      <div class="scard-metrics">
+        <div class="sm-metric"><div class="sm-label">Current</div><div class="sm-val loading" id="scur-${s.name}">…</div></div>
+        <div class="sm-metric"><div class="sm-label">Peak</div><div class="sm-val loading" id="spk-${s.name}">…</div></div>
+      </div>
+      <div class="scard-url" title="${s.url}">${s.url}</div>
+    </div>
+  `).join("");
+}
+
+function updateCards() {
+  STATIONS.forEach(s => {
+    const d = liveState[s.name];
+    const badge = document.getElementById(`sbadge-${s.name}`);
+    const cur = document.getElementById(`scur-${s.name}`);
+    const pk = document.getElementById(`spk-${s.name}`);
+    if (d.online === null) return;
+    badge.className = "badge " + (d.online ? "badge-online" : "badge-offline");
+    badge.textContent = d.online ? "Online" : "Offline";
+    cur.className = "sm-val" + (!d.online ? " na" : "");
+    cur.textContent = d.current != null ? d.current.toLocaleString() : (d.online ? "N/A" : "—");
+    pk.className = "sm-val" + (!d.online ? " na" : "");
+    pk.textContent = d.peak != null ? d.peak.toLocaleString() : (d.online ? "N/A" : "—");
+  });
+}
+
+function buildToggles() {
+  const grid = document.getElementById("toggle-grid");
+  grid.innerHTML = STATIONS.map((s, i) => `
+    <div class="station-toggle active" id="tog-${s.name}" onclick="toggleStation('${s.name}')">
+      <span class="swatch" style="background:${COLORS[i % COLORS.length]}"></span>
+      <span class="status-ind" id="ind-${s.name}" style="background:var(--text3)"></span>
+      <span class="station-name">${s.name}</span>
+      <span class="station-cur" id="togcur-${s.name}">—</span>
+    </div>
+  `).join("");
+}
+
+function updateToggles() {
+  STATIONS.forEach(s => {
+    const d = liveState[s.name];
+    const ind = document.getElementById(`ind-${s.name}`);
+    const cur = document.getElementById(`togcur-${s.name}`);
+    if (d.online === true) ind.style.background = "var(--green)";
+    else if (d.online === false) ind.style.background = "var(--red)";
+    cur.textContent = d.current != null ? d.current.toLocaleString() : "—";
+  });
+}
+
+function toggleStation(name) {
+  const el = document.getElementById(`tog-${name}`);
+  if (activeStations.has(name)) { activeStations.delete(name); el.classList.remove("active"); }
+  else { activeStations.add(name); el.classList.add("active"); }
+  renderChart();
+}
+
+function setWindow(hours, btn) {
+  windowHours = hours;
+  document.querySelectorAll(".wbtn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderChart();
+}
+
+function getWindowedHistory() {
+  if (windowHours === 0) return history;
+  const cutoff = Date.now() - windowHours * 3600 * 1000;
+  return history.filter(r => r.ts >= cutoff);
+}
+
+function renderChart() {
+  const wrap = document.querySelector(".chart-wrap");
+  const windowed = getWindowedHistory();
+
+  if (windowed.length === 0) {
+    if (chart) { chart.destroy(); chart = null; }
+    const canvas = document.getElementById("mainChart");
+    canvas.style.display = "none";
+    if (!document.getElementById("empty-msg")) {
+      const d = document.createElement("div");
+      d.id = "empty-msg"; d.className = "empty-chart";
+      d.textContent = "No data yet for this time window — check back after the first fetch.";
+      wrap.appendChild(d);
+    }
+    return;
+  }
+
+  const emptyMsg = document.getElementById("empty-msg");
+  if (emptyMsg) emptyMsg.remove();
+  document.getElementById("mainChart").style.display = "";
+
+  const allTs = [...new Set(windowed.map(r => r.ts))].sort((a,b) => a-b);
+  const labels = allTs.map(ts => {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+  });
+
+  const datasets = STATIONS
+    .filter(s => activeStations.has(s.name))
+    .map((s, idx) => {
+      const color = COLORS[STATIONS.indexOf(s) % COLORS.length];
+      const dataMap = {};
+      windowed.filter(r => r.station === s.name).forEach(r => { dataMap[r.ts] = r.current; });
+      return {
+        label: s.name,
+        data: allTs.map(ts => dataMap[ts] ?? null),
+        borderColor: color,
+        backgroundColor: color + "22",
+        borderWidth: 2,
+        pointRadius: allTs.length > 20 ? 0 : 3,
+        pointHoverRadius: 5,
+        spanGaps: true,
+        tension: 0.3,
+        fill: false,
+      };
+    });
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+    chart.update();
+  } else {
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+    const tickColor = isDark ? "#6a6962" : "#9a9994";
+    chart = new Chart(document.getElementById("mainChart"), {
+      type: "line",
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: isDark ? "#242421" : "#fff",
+            borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
+            borderWidth: 1,
+            titleColor: isDark ? "#f0efe8" : "#1a1a18",
+            bodyColor: isDark ? "#a8a79f" : "#5a5a56",
+            padding: 10,
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: tickColor, maxTicksLimit: 10 } },
+          y: { grid: { color: gridColor }, ticks: { color: tickColor, precision: 0 }, beginAtZero: true }
+        }
+      }
+    });
+  }
+}
+
+function updateLog() {
+  const body = document.getElementById("log-body");
+  const recent = [...history].reverse().slice(0, 100);
+  if (recent.length === 0) { body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No data yet</td></tr>`; return; }
+  body.innerHTML = recent.map(r => `
+    <tr>
+      <td>${new Date(r.ts).toLocaleString([], { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" })}</td>
+      <td>${r.station}</td>
+      <td>${r.current != null ? r.current.toLocaleString() : "—"}</td>
+      <td>${r.peak != null ? r.peak.toLocaleString() : "—"}</td>
+      <td><span class="badge ${r.online ? 'badge-online' : 'badge-offline'}">${r.online ? "Online" : "Offline"}</span></td>
+    </tr>
+  `).join("");
+}
+
+function clearHistory() {
+  if (!confirm("Clear all stored listener history? This cannot be undone.")) return;
+  history = [];
+  saveHistory();
+  updateLog();
+  renderChart();
+  updateSummary();
+}
+
+function exportCSV() {
+  const windowed = getWindowedHistory();
+  if (windowed.length === 0) { alert("No data to export for the selected time window."); return; }
+  const rows = [["Timestamp","Date","Time","Station","Current Listeners","Peak Listeners","Status"]];
+  windowed.forEach(r => {
+    const d = new Date(r.ts);
+    rows.push([
+      r.ts,
+      d.toLocaleDateString(),
+      d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }),
+      r.station,
+      r.current != null ? r.current : "",
+      r.peak != null ? r.peak : "",
+      r.online ? "Online" : "Offline"
+    ]);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const label = windowHours === 0 ? "all" : `${windowHours}h`;
+  a.download = `radio-listeners-${label}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+loadHistory();
+buildCards();
+buildToggles();
+renderChart();
+updateLog();
+updateSummary();
+fetchAll();
+</script>
+
+
+</body></html>
